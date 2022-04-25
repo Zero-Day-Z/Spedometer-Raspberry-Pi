@@ -58,3 +58,6 @@ else:
   vel= int(totvelocity/samp)
   avgspeed = int(totspeed/samp)
   print('Vel:',vel + 'Avg Speed: ',avgspeed)
+  
+  GPIO.cleanup()
+  print('Finished')
