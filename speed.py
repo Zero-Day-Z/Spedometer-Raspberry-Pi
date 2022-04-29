@@ -1,5 +1,33 @@
 import RPi.GPIO as GPIO
 import time
+import math
+import smtplib
+
+#Email Notification
+SMTP_SERVER = 'smtp.gmail.com' #Email Server (don't change!)
+SMTP_PORT = 587 #Server Port (don't change!)
+GMAIL_USERNAME = #email
+GMAIL_PASSWORD = #password
+
+class Emailer:
+    def sendmail(self, recipient,  subject, content):
+        #Creating the headers
+        headers = ["From: " + GMAIL_USERNAME, "Subject: " +subject, 
+            "To: " + recipient, "MIME-Version 1.0", "Content-Type: text/html"]
+        headers = "\r\n".join(headers)
+
+        #Connect to Gmail Server
+        session = smtplib.SMTP(SMTP_SERVER, SMTP_PORT)
+        session.ehlo()
+        session.starttls()
+        session.ehlo()
+
+        #Login to Gmail
+        session.login(GMAIL_USERNAME, GMAIL_PASSWORD)
+
+        #Send Email & Exit
+        session.sendmail(GMAIL_USERNAME, recipient, headers + "\r\n\r\n" + content)
+        session.quit
 
 GPIO.setmode(GPIO.BOARD)
 trig=11
@@ -10,10 +38,10 @@ samp = 20
 offset = 0.0
 SOS = 34300
 
-tot dist = 0
-avg dist = 0
-dist0 = 0
-dist1 = 1
+totdist = 0
+avgdist = 0
+distZero = 0
+distOne = 0
 
 speed = 0
 totspeed = 0
@@ -30,6 +58,7 @@ dist_error=False
 for x in range(0,samp):
   GPIO.output(trig, False)
   time.sleep(0.310)
+
 GPIO.output(trig,True)
 time.sleep(0.000015)
 GPIO.output(trig,False)
@@ -41,23 +70,31 @@ while GPIO.input(echo) == 1:
   pulse_end1 = time.time()
   
 pulse_width = (pulse_end1 - pulse_begin)
-print('Read' +str(x+1) + '/' +str(samp), str(round(pulse_width,9))
+print('Read' +str(x+1) + '/' +str(samp), str(round(pulse_width,9)))
 
-dist1 = (pulse_width * SOS * 0.5)
-totdist+= dist1
-if dist1 < 2 or dist 1 > 400: dist_error = True
-velocity = (dist1 - dist0)/pulse_end1 - pulse_end0)
+distOne = (pulse_width * SOS * 0.5)
+totdist+= distOne
+if distOne < -100000 or distOne > 400000: dist_error = True
+velocity = ((distOne - distZero)/pulse_end1 - pulse_end0)
 speed = abs(velocity)
-dist0 = dist1
+distZero = distOne
 totspeed+= speed
 totvelocity+= velocity
 
 if dist_error:
   print('Out of range')
 else:
-  vel= int(totvelocity/samp)
-  avgspeed = int(totspeed/samp)
-  print('Vel:',vel + 'Avg Speed: ',avgspeed)
+  vel= (totvelocity/samp)
+  vel= str(vel)
+  avgspeed = (totspeed/samp)
+  avgspeed = round(avgspeed,2)
+  avgspeed = str(avgspeed)
+  print('Vel:'+ vel + 'Avg Speed: '+avgspeed)
+  sender = Emailer()
+  sendTo = '#recipient email
+  emailSubject = "IOT Research: Speed"
+  emailContent = "This is the Pi in the lab.\n Avg Speed and Velocity detected! \nAvg Speed: "+avgspeed+ "\nAvg: Velocity: "+vel
+  sender.sendmail(sendTo, emailSubject, emailContent)
   
   GPIO.cleanup()
   print('Finished')
